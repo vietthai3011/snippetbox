@@ -54,6 +54,7 @@ func main() {
 
 	logger.Info("starting server", "addr", *addr)
 
+	// myMiddleware → servemux → application handler
 	err = http.ListenAndServe(*addr, app.routers())
 	logger.Error(err.Error())
 	os.Exit(1)

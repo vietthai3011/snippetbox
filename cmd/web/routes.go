@@ -2,9 +2,11 @@ package main
 
 import (
 	"net/http"
+
+	"github.com/justinas/alice"
 )
 
-func (app *application) routers() *http.ServeMux {
+func (app *application) routers() http.Handler {
 
 	/*
 		1. http.StripPrefix("/static", ...) sẽ loại bỏ phần /static khỏi đường dẫn, vì vậy yêu cầu sẽ chuyển thành images/logo.png.
@@ -20,5 +22,7 @@ func (app *application) routers() *http.ServeMux {
 	mux.HandleFunc("POST /snippet/create", app.snippetCreatePost)
 	mux.Handle("GET /static/", http.StripPrefix("/static/", fileServer))
 
-	return mux
+	standard := alice.New(app.recoverPanic, app.logRequest, commonHeaders)
+
+	return standard.Then(mux)
 }

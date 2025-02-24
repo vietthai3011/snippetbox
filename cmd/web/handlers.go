@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strconv"
 
@@ -11,42 +10,20 @@ import (
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Server", "Go")
+	// panic("oops! something went wrong")	
 
 	snippets, err := app.snippet.Laster()
-
-	if err != nil {
-		app.serverError(w, r, err)
-	}
-
-	// for _, snippet := range snippets {
-	// 	fmt.Fprintf(w, "%+v\n", snippet)
-	// }
-
-	files := []string{
-		"./ui/html/base.html",
-		"./ui/html/partials/nav.html",
-		"./ui/html/pages/home.html",
-	}
-
-	// ts: Là biến sẽ chứa đối tượng *template.Template sau khi các file HTML được phân tích cú pháp thành công. ts này có thể được sử dụng để render các file HTML.
-	ts, err := template.ParseFiles(files...)
 
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
-	data := templateData{
-		Snippets: snippets,
-	}
+	data := app.newTemplateData(r)
+	data.Snippets = snippets
 
-	// Chuyển template base vào body response
-	err = ts.ExecuteTemplate(w, "base", data)
+	app.render(w, r, http.StatusOK, "home.html", data)
 
-	if err != nil {
-		app.serverError(w, r, err)
-	}
 }
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
@@ -58,6 +35,9 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 
 	snippet, err := app.snippet.Get(id)
 
+	data := app.newTemplateData(r)
+	data.Snippet = &snippet
+
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			http.NotFound(w, r)
@@ -66,28 +46,7 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	files := []string{
-		"./ui/html/base.html",
-		"./ui/html/partials/nav.html",
-		"./ui/html/pages/view.html",
-	}
-
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, r, err)
-	}
-
-	data := templateData{
-		Snippet: &snippet,
-	}
-
-	fmt.Printf("%+v", *data.Snippet)
-
-	err = ts.ExecuteTemplate(w, "base", data)
-
-	if err != nil {
-		app.serverError(w, r, err)
-	}
+	app.render(w, r, http.StatusOK, "view.html", data)
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
